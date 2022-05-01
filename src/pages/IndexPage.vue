@@ -23,18 +23,18 @@
     <template v-if="weatherData">
       <div class="col text-white text-center">
         <div class="text-h4 text-weight-light">
-          San Pedro Sula
+          {{weatherData.name}}
         </div>
         <div class="text-h6 text-weight-light">
-          Sunny
+          {{weatherData.weather[0].main}}
         </div>
         <div class="text-h1 text-weight-thin q-my-lg relative-position">
-          <span>23</span>
-          <span class="text-h4 relative-position degree">&deg;</span>
+          <span>{{Math.round(weatherData.main.temp)}}</span>
+          <span class="text-h4 relative-position degree">&deg;C</span>
         </div>
       </div>
       <div class="div col text-center">
-        <img src="https://www.fillmurray.com/100/100" alt="Bill">
+        <img :src="`http://openweathermap.org/img/wn/${weatherData.weather[0].icon}@2x.png`">
       </div>
     </template>
     <template v-else>
@@ -42,12 +42,11 @@
         <div class="col text-h2 text-weight-thin">
           Quasar <br> Weather
         </div>
-        <q-btn class="col" flat>
+        <q-btn class="col" flat @click="getLocation">
           <q-icon
             left
             size="3em"
             name="my_location" 
-            @click="getLocation"
           />
           <div>Find my location</div>
         </q-btn>
@@ -82,8 +81,9 @@ export default defineComponent({
       })
     }
     const getWeatherByCoords = () => {
-      axios.get(`${baseUrl.value}?lat=${lat.value}&lon=${lon.value}&appid=${apiKey.value}&units=metric`).then(response => {
-        console.log('response:', response)
+      axios(`${baseUrl.value}?lat=${lat.value}&lon=${lon.value}&appid=${apiKey.value}&units=metric`)
+      .then(response => {
+        weatherData.value = response.data
       })
     }
     return { search, weatherData, getLocation, getWeatherByCoords }
