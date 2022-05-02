@@ -1,9 +1,10 @@
 <template>
-  <q-page class="flex column">
-    <div class="col q-pt-lg q-px-md">
+  <q-page class="flex column" :class="bgClass">
+    <div class="col q-pt-lg q-px-md" >
       <q-input
         v-model="search"
         placeholder="Search"
+        @keyup.enter="getWeatherBySearch"
         dark
         borderless
         >
@@ -15,7 +16,13 @@
         </template>
 
         <template v-slot:append>
-          <q-btn round dense flat icon="search" />
+          <q-btn
+          @click="getWeatherBySearch"
+            round
+            dense
+            flat
+            icon="search" 
+            />
         </template>
       </q-input>
     </div>
@@ -59,13 +66,15 @@
 
 <script>
 
-import { defineComponent, ref } from 'vue'
+import { defineComponent, ref, computed } from 'vue'
 import axios from 'axios'
+import { useQuasar } from 'quasar'
 
 export default defineComponent({
   name: 'IndexPage',
 
   setup () {
+    const $q = useQuasar()
     const search = ref('')
     const weatherData = ref(null)
     const lat = ref(null)
@@ -73,20 +82,43 @@ export default defineComponent({
     const apiKey = ref('52e8e4553c2d6e62aea2c8e174025ad7')
     const baseUrl = ref('https://api.openweathermap.org/data/2.5/weather')
     const getLocation = () => {
+      $q.loading.show()
       navigator.geolocation.getCurrentPosition(position => {
         console.log('position:', position)
         lat.value = position.coords.latitude
         lon.value = position.coords.longitude
         getWeatherByCoords()
+        $q.loading.hide()
       })
     }
     const getWeatherByCoords = () => {
+      $q.loading.show()
       axios(`${baseUrl.value}?lat=${lat.value}&lon=${lon.value}&appid=${apiKey.value}&units=metric`)
       .then(response => {
         weatherData.value = response.data
+        $q.loading.hide()
       })
     }
-    return { search, weatherData, getLocation, getWeatherByCoords }
+    const getWeatherBySearch = () => {
+      $q.loading.show()
+      axios(`${baseUrl.value}?q=${ search.value }&appid=${apiKey.value}&units=metric`)
+      .then(response => {
+        weatherData.value = response.data
+        search.value = ''
+        $q.loading.hide()
+      })
+    }
+    const bgClass = computed(() => {
+      if (weatherData.value){
+        if (weatherData.value.weather[0].icon.endsWith('n')){
+          return 'bg-night'
+        }
+        else {
+          return 'bg-day'
+        }
+      }
+    })
+    return { search, weatherData, getLocation, getWeatherByCoords, getWeatherBySearch, bgClass }
   } 
 
 })
@@ -98,6 +130,10 @@ export default defineComponent({
 <style lang="sass">
   .q-page
     background: linear-gradient(to bottom, #136a8a, #267871)
+    &.bg-night
+      background: linear-gradient(to bottom, #232526, #414345)
+    &.bg-day
+      background: linear-gradient(to bottom, #00b4db, #0083b0)
   .degree
     top: -45px
   .skyline
